@@ -1,0 +1,192 @@
+/* Sidebar styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  background-color: var(--theme-color-primary);
+  color: white;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.left {
+  left: 0;
+}
+
+.sidebar.right {
+  right: 0;
+}
+
+.sidebar.closed {
+  padding: 10px;
+  width: 5rem;
+}
+
+.sidebar.open {
+  padding: 25px;
+  width: 16rem;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: none;
+  top: 1rem;
+  right: -1rem;
+  background-color: var(--theme-color-primary);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 15px;
+  box-shadow: -1px 1px 3px 1px rgb(246, 244, 244);
+  transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--theme-color-primary-dark);
+}
+
+.sidebar-toggle:active {
+  border: 4px solid var(--theme-color-primary-dark);
+}
+
+.menu-header {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Menu item styles */
+/* Menu item styles */
+.menu-item {
+  display: flex;
+  flex-direction: column; /* Stack submenu items vertically */
+  align-items: flex-start; /* Align items to the left */
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.menu-item .main-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%; /* Ensure the menu takes full width */
+}
+
+.menu-item:hover {
+  background-color: var(--theme-color-primary-dark);
+}
+
+.menu-item .icon {
+  font-size: 1.25rem;
+}
+
+.menu-item .label {
+  margin-left: 0.75rem;
+}
+
+.menu-item.closed .label {
+  display: none;
+}
+
+/* Chevron Icon Styles */
+.chevron-icon {
+  transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotate {
+  transform: rotate(180deg);
+}
+.submenu {
+  padding-top: 5px;
+  list-style: none;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+.menu-item.submenu-open .submenu {
+  max-height: 500px;
+  opacity: 1;
+}
+.submenu li {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+  color: var(--theme-color-base);
+}
+.submenu li:hover {
+  background-color: var(--theme-color-primary-dark);
+  color: var(--theme-color-primary-content);
+}
+
+.submenu a {
+  text-decoration: none;
+  font-weight: 300;
+  color: var(--theme-color-light);
+}
+/* Submenu styles */
+/* 
+
+.menu-item.submenu-open .submenu {
+  max-height: 500px;
+  opacity: 1;
+}
+
+
+
+.submenu li:hover {
+  background-color: var(--theme-color-primary-dark);
+}
+
+.submenu a {
+  text-decoration: none;
+  font-weight: 500;
+  color: var(--theme-color-light);
+} */
+
+/* Profile section */
+.profile {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  background-color: var(--theme-color-primary-dark);
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.profile h3 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.profile p {
+  font-size: 0.875rem;
+}
+
+.profile .email {
+  font-size: 0.75rem;
+  color: var(--theme-color-primary-content);
+}
+
+/* Drag and drop placeholder styles */
+ul.space-y-2 {
+  list-style: none;
+  padding: 0;
+}
+
+li.group {
+  text-decoration: none;
+  cursor: move;
+}
+
+li.group:hover {
+  background-color: var(--theme-color-primary-dark);
+}
