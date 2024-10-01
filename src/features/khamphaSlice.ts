@@ -1,6 +1,13 @@
 // src/features/dataSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../services/firebase";
 
 // Thunk to delete data by id
@@ -44,20 +51,49 @@ export const uploadData = createAsyncThunk(
     };
   }
 );
+export const updateData = createAsyncThunk(
+  "khampha/updateData",
+  async (payload: {
+    id: string;
+    label_id: number;
+    top: string;
+    left: string;
+    label: string;
+    description: string;
+  }) => {
+    const { id, label_id, top, left, label, description } = payload;
+
+    // Tạo đối tượng cập nhật ban đầu không có imageUrl
+    let updatedData: {
+      label_id: number;
+      top: string;
+      left: string;
+      label: string;
+      description: string;
+    } = { label_id, top, left, label, description };
+
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "khampha", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
 
 // Define the KhamPha interface with the new structure
 interface KhamPha {
-  id: string;            // Unique identifier
-  label_id: number;     // Numeric identifier for the label
-  top: string;          // Position from the top (percentage or pixel)
-  left: string;         // Position from the left (percentage or pixel)
-  label: string;        // The label text
-  description: string;  // Description for the kham pha
+  id: string; // Unique identifier
+  label_id: number; // Numeric identifier for the label
+  top: string; // Position from the top (percentage or pixel)
+  left: string; // Position from the left (percentage or pixel)
+  label: string; // The label text
+  description: string; // Description for the kham pha
 }
 
 // Define the state interface for KhamPha
 interface KhamPhaState {
-  khampha: KhamPha[];   // Array of KhamPha objects
+  khampha: KhamPha[]; // Array of KhamPha objects
   loading: boolean;
   error: string | null;
 }
@@ -71,9 +107,9 @@ const initialState: KhamPhaState = {
 
 // Thunk to fetch KhamPha data from Firestore
 export const fetchKhamPha = createAsyncThunk<KhamPha[]>(
-  'khampha/fetchKhamPha',
+  "khampha/fetchKhamPha",
   async () => {
-    const querySnapshot = await getDocs(collection(db, 'khampha'));
+    const querySnapshot = await getDocs(collection(db, "khampha"));
     const khampha: KhamPha[] = querySnapshot.docs.map((doc) => ({
       id: doc.id, // Lấy id từ Firestore
       ...doc.data(),
@@ -113,7 +149,16 @@ const khamphaSlice = createSlice({
       })
       .addCase(deleteData.fulfilled, (state, action) => {
         // Xóa mục khỏi state
-        state.khampha = state.khampha.filter(item => item.id !== action.payload);
+        state.khampha = state.khampha.filter(
+          (item) => item.id !== action.payload
+        );
+      })
+      .addCase(updateData.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.khampha.findIndex(item => item.id === action.payload.id);
+        if (index !== -1) {
+          state.khampha[index] = action.payload;
+        }
       });
   },
 });

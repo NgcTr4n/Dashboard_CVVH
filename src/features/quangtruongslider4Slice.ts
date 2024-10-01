@@ -1,6 +1,6 @@
 // src/features/dataSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
 
@@ -41,11 +41,34 @@ export const uploadDataWithImage4 = createAsyncThunk(
     };
   }
 );
+export const updateData4 = createAsyncThunk(
+  "quangtruongslider4/updateData",
+  async (payload: { id: string; description: string; file?: File }) => {
+    const { id, description, file } = payload;
+
+    // Tạo đối tượng cập nhật ban đầu không có imageUrl
+    let updatedData: {  description: string; imageUrl?: string } = { description };
+
+    // Nếu có tệp mới, cập nhật cả hình ảnh
+    if (file) {
+      const storageRef = ref(storage, `quangtruongslider4/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      updatedData.imageUrl = downloadURL; // Chỉ thêm imageUrl khi có tệp mới
+    }
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "quangtruongslider4", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
 
 interface Quangtruongslider4 {
   id: string; // Thêm id vào kiểu dữ liệu
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 interface Quangtruongslider4State {
@@ -104,6 +127,13 @@ const quangtruongslider4Slice = createSlice({
       .addCase(deleteData4.fulfilled, (state, action) => {
         // Xóa mục khỏi state
         state.quangtruongslider4 = state.quangtruongslider4.filter(item => item.id !== action.payload);
+      })
+      .addCase(updateData4.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.quangtruongslider4.findIndex(item => item.id === action.payload.id);
+        if (index !== -4) {
+          state.quangtruongslider4[index] = action.payload;
+        }
       });
   },
 });

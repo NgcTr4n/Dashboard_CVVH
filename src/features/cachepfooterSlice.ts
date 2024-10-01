@@ -6,6 +6,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
@@ -53,13 +54,45 @@ export const uploadDataWithImage1 = createAsyncThunk(
     };
   }
 );
+export const updateData1 = createAsyncThunk(
+  "cachep/updateData",
+  async (payload: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    file?: File;
+  }) => {
+    const { id, title, description, file, date } = payload;
 
+    let updatedData: {
+      title: string;
+      description: string;
+      date: string;
+      imageUrl?: string;
+    } = { title, description, date };
+
+    // Nếu có tệp mới, cập nhật cả hình ảnh
+    if (file) {
+      const storageRef = ref(storage, `cachep/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      updatedData.imageUrl = downloadURL; // Chỉ thêm imageUrl khi có tệp mới
+    }
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "cachep", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
 interface Cachep {
   id: string; // Thêm id vào kiểu dữ liệu
   title: string;
   description: string;
   date: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 interface CachepfooterState {
@@ -120,6 +153,15 @@ const cachepSlice = createSlice({
         state.cachep = state.cachep.filter(
           (item) => item.id !== action.payload
         );
+      })
+      .addCase(updateData1.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.cachep.findIndex(
+          (item) => item.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.cachep[index] = action.payload;
+        }
       });
   },
 });

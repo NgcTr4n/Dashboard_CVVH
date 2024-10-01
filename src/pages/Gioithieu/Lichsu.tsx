@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks";
-import { deleteData, uploadDataWithImage } from "../../features/lichsuSlice"; // Thay đổi từ uploadData sang uploadDataWithImage
+import { deleteData, updateData, uploadDataWithImage } from "../../features/lichsuSlice"; // Thay đổi từ uploadData sang uploadDataWithImage
 import Layout from "../../layout";
 import "../form.css";
 import { fetchServices } from "../../features/lichsuSlice";
@@ -16,25 +16,40 @@ const Lichsu: React.FC = () => {
   const [description, setDescription] = useState<string>("");
   const [color, setColor] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const handleUpload = (e: React.FormEvent) => {
-    e.preventDefault(); 
-    if (file && title && description && color) {
-      dispatch(
-        uploadDataWithImage({
-          file,
-          title,
-          description,
-          color
-        })
-      );
-      // Reset các giá trị input
-      setFile(null);
+    e.preventDefault();
+    if (description && title && color && file) {
+      if (editId) {
+        dispatch(
+          updateData({
+            id: editId,
+            title,
+            color,
+            description,
+            file,
+          })
+        );
+        setEditId(null); 
+      } else {
+        dispatch(
+          uploadDataWithImage({
+            file,
+            title,
+            color,
+            description,
+          })
+        );
+      }
       setTitle("");
       setDescription("");
       setColor("");
+      setFile(null); 
     }
   };
+
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -42,7 +57,11 @@ const Lichsu: React.FC = () => {
       setFile(selectedFile);
     }
   };
-
+  const handleEdit = (item: any) => {
+    setTitle(item.title);
+    setDescription(item.description);
+    setEditId(item.id); 
+  };
   useEffect(() => {
     dispatch(fetchServices());
   }, [dispatch]);
@@ -147,6 +166,12 @@ const Lichsu: React.FC = () => {
                   <td>{card.description}</td>
                   <td>{card.color}</td>
                   <td>
+                  <button
+                      onClick={() => handleEdit(card)}
+                      className="button"
+                    >
+                      Edit
+                    </button>
                     <button
                       onClick={() => handleDelete(card.id)} // Gọi hàm delete
                       className="button"

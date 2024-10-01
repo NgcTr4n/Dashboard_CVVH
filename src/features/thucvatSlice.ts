@@ -1,6 +1,13 @@
 // src/features/dataSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
 
@@ -48,12 +55,48 @@ export const uploadDataWithImage = createAsyncThunk(
     };
   }
 );
+export const updateData = createAsyncThunk(
+  "thucvat_card/updateData",
+  async (payload: {
+    id: string;
+    title: string;
+    description: string;
+    link: string;
+    date: string;
+    file?: File;
+  }) => {
+    const { id, title, description, link, date, file } = payload;
+
+    // Tạo đối tượng cập nhật ban đầu không có imageUrl
+    let updatedData: {
+      title: string;
+      description: string;
+      link: string;
+      date: string;
+      imageUrl?: string;
+    } = { title, description, date, link };
+
+    // Nếu có tệp mới, cập nhật cả hình ảnh
+    if (file) {
+      const storageRef = ref(storage, `thucvat_card/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      updatedData.imageUrl = downloadURL; // Chỉ thêm imageUrl khi có tệp mới
+    }
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "thucvat_card", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
 
 interface ThucvatCard {
   id: string; // Thêm trường id
   title: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   link: string;
   date: string;
 }
@@ -71,9 +114,9 @@ const initialState: ThucvatCardState = {
 };
 
 export const fetchThucvatCard = createAsyncThunk<ThucvatCard[]>(
-  'thucvat_card/fetchThucvatCard',
+  "thucvat_card/fetchThucvatCard",
   async () => {
-    const querySnapshot = await getDocs(collection(db, 'thucvat_card'));
+    const querySnapshot = await getDocs(collection(db, "thucvat_card"));
     const thucvatcard: ThucvatCard[] = querySnapshot.docs.map((doc) => ({
       id: doc.id, // Lấy id từ Firestore
       ...doc.data(),
@@ -112,7 +155,16 @@ const thucvatcardSlice = createSlice({
       })
       .addCase(deleteData.fulfilled, (state, action) => {
         // Xóa mục khỏi state
-        state.thucvatcard = state.thucvatcard.filter(item => item.id !== action.payload);
+        state.thucvatcard = state.thucvatcard.filter(
+          (item) => item.id !== action.payload
+        );
+      })
+      .addCase(updateData.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.thucvatcard.findIndex(item => item.id === action.payload.id);
+        if (index !== -1) {
+          state.thucvatcard[index] = action.payload;
+        }
       });
   },
 });

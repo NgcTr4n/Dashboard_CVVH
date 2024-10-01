@@ -1,6 +1,6 @@
 // src/features/dataSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
 
@@ -41,11 +41,37 @@ export const uploadDataWithImage = createAsyncThunk(
     };
   }
 );
+export const updateData = createAsyncThunk(
+  "thanhviennhahang/updateData",
+  async (payload: { id: string; description: string; file?: File }) => {
+    const { id, description, file } = payload;
+
+    // Tạo đối tượng cập nhật ban đầu không có imageUrl
+    let updatedData: { description: string; imageUrl?: string } = { description };
+
+    // Nếu có tệp mới, cập nhật cả hình ảnh
+    if (file) {
+      const storageRef = ref(storage, `thanhviennhahang/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      updatedData.imageUrl = downloadURL; // Chỉ thêm imageUrl khi có tệp mới
+    }
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "thanhviennhahang", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
+
+
+
 
 interface Thanhviennhahang {
   id: string; // Thêm id vào kiểu dữ liệu
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 interface ThanhviennhahangState {
@@ -104,6 +130,13 @@ const thanhviennhahangSlice = createSlice({
       .addCase(deleteData.fulfilled, (state, action) => {
         // Xóa mục khỏi state
         state.thanhviennhahang = state.thanhviennhahang.filter(item => item.id !== action.payload);
+      })
+      .addCase(updateData.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.thanhviennhahang.findIndex(item => item.id === action.payload.id);
+        if (index !== -1) {
+          state.thanhviennhahang[index] = action.payload;
+        }
       });
   },
 });

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks";
-import { deleteData, uploadDataWithImage } from "../../features/sukiensliderSlice";
+import { deleteData, updateData, uploadDataWithImage } from "../../features/sukiensliderSlice";
 import Layout from "../../layout";
 import "../form.css";
 import { fetchSukienSlider } from "../../features/sukiensliderSlice";
@@ -14,21 +14,32 @@ const Cardslider: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
-
+  const [editId, setEditId] = useState<string | null>(null);
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
-    if (file && title && description) {
-      dispatch(
-        uploadDataWithImage({
-          file,
-          title,
-          description,
-        })
-      );
-      // Reset input values
-      setFile(null);
+    if (description && title && file) {
+      if (editId) {
+        dispatch(
+          updateData({
+            id: editId,
+            title,
+            description,
+            file,
+          })
+        );
+        setEditId(null); 
+      } else {
+        dispatch(
+          uploadDataWithImage({
+            file,
+            title,
+            description,
+          })
+        );
+      }
       setTitle("");
       setDescription("");
+      setFile(null); 
     }
   };
 
@@ -38,7 +49,12 @@ const Cardslider: React.FC = () => {
       setFile(selectedFile);
     }
   };
-
+  const handleEdit = (item: any) => {
+    setTitle(item.title);
+    setDescription(item.description);
+    setEditId(item.id); 
+  };
+  
   useEffect(() => {
     dispatch(fetchSukienSlider());
   }, [dispatch]);
@@ -128,6 +144,12 @@ const Cardslider: React.FC = () => {
                   <td>{card.title}</td>
                   <td>{card.description}</td>
                   <td>
+                  <button
+                      onClick={() => handleEdit(card)}
+                      className="button"
+                    >
+                      Edit
+                    </button>
                     <button
                       onClick={() => handleDelete(card.id)}
                       className="button"

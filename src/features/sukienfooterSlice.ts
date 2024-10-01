@@ -6,6 +6,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../services/firebase";
@@ -53,13 +54,39 @@ export const uploadDataWithImage = createAsyncThunk(
     };
   }
 );
+export const updateData = createAsyncThunk(
+  "waterfooter/updateData",
+  async (payload: { id: string; title: string; description: string;date:string; file?: File }) => {
+    const { id, title, description,date, file } = payload;
+
+    // Tạo đối tượng cập nhật ban đầu không có imageUrl
+    let updatedData: { title: string; description: string;date:string; imageUrl?: string } = { title, description,date };
+
+    // Nếu có tệp mới, cập nhật cả hình ảnh
+    if (file) {
+      const storageRef = ref(storage, `waterfooter/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      updatedData.imageUrl = downloadURL; // Chỉ thêm imageUrl khi có tệp mới
+    }
+
+    // Cập nhật tài liệu trong Firestore
+    const docRef = doc(db, "waterfooter", id);
+    await updateDoc(docRef, updatedData);
+
+    return { id, ...updatedData }; // Trả về dữ liệu đã cập nhật, bao gồm cả imageUrl (nếu có)
+  }
+);
+
+
+
 
 interface Waterfooter {
   id: string; // Thêm id vào kiểu dữ liệu
   title: string;
   description: string;
   date: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 interface WaterfooterState {
@@ -120,6 +147,13 @@ const waterfooterSlice = createSlice({
         state.waterfooter = state.waterfooter.filter(
           (item) => item.id !== action.payload
         );
+      })
+      .addCase(updateData.fulfilled, (state, action) => {
+        // Cập nhật mục đã chỉnh sửa trong state
+        const index = state.waterfooter.findIndex(item => item.id === action.payload.id);
+        if (index !== -1) {
+          state.waterfooter[index] = action.payload;
+        }
       });
   },
 });
